@@ -63,9 +63,6 @@ namespace Mirror
         internal void QueueConnectedEvent() => connectedEventPending = true;
         internal void QueueDisconnectedEvent() => disconnectedEventPending = true;
 
-        // parameterless constructor that disables batching for local connections
-        public LocalConnectionToServer() : base() {}
-
         internal override void Send(ArraySegment<byte> segment, int channelId = Channels.Reliable)
         {
             if (segment.Count == 0)
@@ -74,8 +71,22 @@ namespace Mirror
                 return;
             }
 
-            // handle the server's message directly
-            NetworkServer.OnTransportData(connectionId, segment, channelId);
+            // OnTransportData assumes batching.
+            // so let's make a batch with proper timestamp prefix.
+            Batcher batcher = GetBatchForChannelId(channelId);
+            batcher.AddMessage(segment);
+
+            // flush it to the server's OnTransportData immediately.
+            // local connection to server always invokes immediately.
+            using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())
+            {
+                // TODO use true local time, not affected by latency
+                if (batcher.MakeNextBatch(writer, NetworkTime.time))
+                {
+                    NetworkServer.OnTransportData(connectionId, writer.ToArraySegment(), channelId);
+                }
+                else Debug.LogError("Local connection failed to make batch. This should never happen.");
+            }
         }
 
         internal override void Update()
@@ -94,9 +105,22 @@ namespace Mirror
             {
                 // call receive on queued writer's content, return to pool
                 PooledNetworkWriter writer = queue.Dequeue();
-                ArraySegment<byte> segment = writer.ToArraySegment();
-                //Debug.Log("Dequeue " + BitConverter.ToString(segment.Array, segment.Offset, segment.Count));
-                NetworkClient.OnTransportData(segment, Channels.Reliable);
+                ArraySegment<byte> message = writer.ToArraySegment();
+
+                // OnTransportData assumes a proper batch with timestamp etc.
+                // let's make a proper batch and pass it to OnTransportData.
+                Batcher batcher = GetBatchForChannelId(Channels.Reliable);
+                batcher.AddMessage(message);
+
+                using (PooledNetworkWriter batchWriter = NetworkWriterPool.GetWriter())
+                {
+                    // TODO use true local time, not affected by latency
+                    if (batcher.MakeNextBatch(batchWriter, NetworkTime.time))
+                    {
+                        NetworkClient.OnTransportData(batchWriter.ToArraySegment(), Channels.Reliable);
+                    }
+                }
+
                 NetworkWriterPool.Recycle(writer);
             }
 
