@@ -1,6 +1,10 @@
 // un-batching functionality encapsulated into one class.
 // -> less complexity
 // -> easy to test
+//
+// includes timestamp for tick batching.
+// -> allows NetworkTransform etc. to use timestamp without including it in
+//    every single message
 using System;
 using System.Collections.Generic;
 
