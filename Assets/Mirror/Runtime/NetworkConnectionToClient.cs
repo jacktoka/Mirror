@@ -53,7 +53,7 @@ namespace Mirror
                     Batcher batcher = kvp.Value;
                     using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())
                     {
-                        while (batcher.MakeNextBatch(writer))
+                        while (batcher.MakeNextBatch(writer, NetworkTime.time))
                         {
                             // send
                             Transport.activeTransport.ServerSend(connectionId, writer.ToArraySegment(), kvp.Key);

@@ -49,7 +49,7 @@ namespace Mirror
 
         // batch as many messages as possible into writer
         // returns true if any batch was made.
-        public bool MakeNextBatch(NetworkWriter writer)
+        public bool MakeNextBatch(NetworkWriter writer, double tickTimeStamp)
         {
             // if we have no messages then there's nothing to do
             if (messages.Count == 0)
@@ -59,6 +59,10 @@ namespace Mirror
             if (writer.Position != 0)
                 throw new ArgumentException($"MakeNextBatch needs a fresh writer!");
 
+            // write timestamp first
+            // -> double precision for accuracy over long periods of time
+            writer.WriteDouble(tickTimeStamp);
+
             // for each queued message
             while (messages.Count > 0)
             {
@@ -67,6 +71,7 @@ namespace Mirror
                 ArraySegment<byte> segment = message.ToArraySegment();
 
                 // still fits?
+                // NOTE: writer.Position already includes our TickTimeStamp size
                 if (writer.Position + segment.Count <= MaxBatchSize)
                 {
                     // add it
