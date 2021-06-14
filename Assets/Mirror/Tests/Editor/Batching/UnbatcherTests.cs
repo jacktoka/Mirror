@@ -21,21 +21,11 @@ namespace Mirror.Tests.Batching
             Assert.That(result, Is.False);
         }
 
-        // helper function to create a batch prefixed by timestamp
-        // TODO reuse in BatcherTests?
-        public static byte[] ConcatTimestamp(double tickTimeStamp, byte[] data)
-        {
-            NetworkWriter writer = new NetworkWriter();
-            writer.WriteDouble(tickTimeStamp);
-            writer.WriteBytes(data, 0, data.Length);
-            return writer.ToArray();
-        }
-
         [Test]
         public void GetNextMessage_OneBatch()
         {
             // add one batch
-            byte[] batch = ConcatTimestamp(TickTimeStamp, new byte[]{0x01, 0x02});
+            byte[] batch = BatcherTests.ConcatTimestamp(TickTimeStamp, new byte[]{0x01, 0x02});
             unbatcher.AddBatch(new ArraySegment<byte>(batch));
 
             // get next message, read first byte
@@ -57,11 +47,11 @@ namespace Mirror.Tests.Batching
         public void GetNextMessage_MultipleBatches()
         {
             // add first batch
-            byte[] firstBatch = ConcatTimestamp(TickTimeStamp, new byte[]{0x01, 0x02});
+            byte[] firstBatch = BatcherTests.ConcatTimestamp(TickTimeStamp, new byte[]{0x01, 0x02});
             unbatcher.AddBatch(new ArraySegment<byte>(firstBatch));
 
             // add second batch
-            byte[] secondBatch = ConcatTimestamp(TickTimeStamp, new byte[]{0x03, 0x04});
+            byte[] secondBatch = BatcherTests.ConcatTimestamp(TickTimeStamp, new byte[]{0x03, 0x04});
             unbatcher.AddBatch(new ArraySegment<byte>(secondBatch));
 
             // get next message, read everything
@@ -91,7 +81,7 @@ namespace Mirror.Tests.Batching
         public void RetireBatchAndTryNewBatch()
         {
             // add first batch
-            byte[] firstBatch = ConcatTimestamp(TickTimeStamp, new byte[]{0x01, 0x02});
+            byte[] firstBatch = BatcherTests.ConcatTimestamp(TickTimeStamp, new byte[]{0x01, 0x02});
             unbatcher.AddBatch(new ArraySegment<byte>(firstBatch));
 
             // read everything
@@ -106,7 +96,7 @@ namespace Mirror.Tests.Batching
             Assert.That(result, Is.False);
 
             // add new batch
-            byte[] secondBatch = ConcatTimestamp(TickTimeStamp, new byte[]{0x03, 0x04});
+            byte[] secondBatch = BatcherTests.ConcatTimestamp(TickTimeStamp, new byte[]{0x03, 0x04});
             unbatcher.AddBatch(new ArraySegment<byte>(secondBatch));
 
             // read everything
