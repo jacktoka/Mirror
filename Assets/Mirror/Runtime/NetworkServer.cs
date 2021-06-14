@@ -384,7 +384,7 @@ namespace Mirror
             if (connections.Count < maxConnections)
             {
                 // add connection
-                NetworkConnectionToClient conn = new NetworkConnectionToClient(connectionId, true);
+                NetworkConnectionToClient conn = new NetworkConnectionToClient(connectionId);
                 OnConnected(conn);
             }
             else

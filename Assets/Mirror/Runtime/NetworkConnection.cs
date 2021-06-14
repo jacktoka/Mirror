@@ -57,19 +57,14 @@ namespace Mirror
         // Dictionary<channelId, batch> because we have multiple channels.
         protected Dictionary<int, Batcher> batches = new Dictionary<int, Batcher>();
 
-        // batch messages and send them out in LateUpdate (or after batchInterval)
-        protected bool batching;
-
-        internal NetworkConnection(bool batching)
+        internal NetworkConnection()
         {
-            this.batching = batching;
-
             // set lastTime to current time when creating connection to make
             // sure it isn't instantly kicked for inactivity
             lastMessageTime = Time.time;
         }
 
-        internal NetworkConnection(int networkConnectionId, bool batching) : this(batching)
+        internal NetworkConnection(int networkConnectionId) : this()
         {
             connectionId = networkConnectionId;
             // TODO why isn't lastMessageTime set in here like in the other ctor?

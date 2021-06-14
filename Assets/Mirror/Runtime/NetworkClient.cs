@@ -146,7 +146,7 @@ namespace Mirror
             connectState = ConnectState.Connecting;
             Transport.activeTransport.ClientConnect(address);
 
-            connection = new NetworkConnectionToServer(true);
+            connection = new NetworkConnectionToServer();
         }
 
         /// <summary>Connect client to a NetworkServer by Uri.</summary>
@@ -162,7 +162,7 @@ namespace Mirror
             connectState = ConnectState.Connecting;
             Transport.activeTransport.ClientConnect(uri);
 
-            connection = new NetworkConnectionToServer(true);
+            connection = new NetworkConnectionToServer();
         }
 
         // TODO why are there two connect host methods?

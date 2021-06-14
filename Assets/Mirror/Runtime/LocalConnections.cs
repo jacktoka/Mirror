@@ -10,7 +10,7 @@ namespace Mirror
     {
         internal LocalConnectionToServer connectionToServer;
 
-        public LocalConnectionToClient() : base(LocalConnectionId, false) {}
+        public LocalConnectionToClient() : base(LocalConnectionId) {}
 
         public override string address => "localhost";
 
@@ -64,7 +64,7 @@ namespace Mirror
         internal void QueueDisconnectedEvent() => disconnectedEventPending = true;
 
         // parameterless constructor that disables batching for local connections
-        public LocalConnectionToServer() : base(false) {}
+        public LocalConnectionToServer() : base() {}
 
         internal override void Send(ArraySegment<byte> segment, int channelId = Channels.Reliable)
         {

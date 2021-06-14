@@ -11,8 +11,8 @@ namespace Mirror
         // unbatcher
         public Unbatcher unbatcher = new Unbatcher();
 
-        public NetworkConnectionToClient(int networkConnectionId, bool batching)
-            : base(networkConnectionId, batching)
+        public NetworkConnectionToClient(int networkConnectionId)
+            : base(networkConnectionId)
         {
         }
 
@@ -23,45 +23,38 @@ namespace Mirror
             // validate packet size first.
             if (ValidatePacketSize(segment, channelId))
             {
-                // batching enabled?
-                if (batching)
-                {
-                    // try to batch, or send directly if too big.
-                    // (user might try to send a max message sized message,
-                    //  where max message size is larger than max batch size.
-                    //  for example, kcp2k max message size is 144 KB but we
-                    //  only want to batch MTU each time)
-                    if (!GetBatchForChannelId(channelId).AddMessage(segment))
-                        Transport.activeTransport.ServerSend(connectionId, segment, channelId);
-                }
-                // otherwise send directly to minimize latency
-                else Transport.activeTransport.ServerSend(connectionId, segment, channelId);
+                // try to batch, or send directly if too big.
+                // (user might try to send a max message sized message,
+                //  where max message size is larger than max batch size.
+                //  for example, kcp2k max message size is 144 KB but we
+                //  only want to batch MTU each time)
+                //
+                // NOTE: we ALWAYS batch. it's not optional, because the
+                //       receiver needs timestamps for NT etc.
+                if (!GetBatchForChannelId(channelId).AddMessage(segment))
+                    Transport.activeTransport.ServerSend(connectionId, segment, channelId);
             }
         }
 
         // flush batched messages at the end of every Update.
         internal void Update()
         {
-            // batching?
-            if (batching)
+            // go through batches for all channels
+            foreach (KeyValuePair<int, Batcher> kvp in batches)
             {
-                // go through batches for all channels
-                foreach (KeyValuePair<int, Batcher> kvp in batches)
+                // make and send as many batches as necessary from the stored
+                // messages.
+                Batcher batcher = kvp.Value;
+                using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())
                 {
-                    // make and send as many batches as necessary from the stored
-                    // messages.
-                    Batcher batcher = kvp.Value;
-                    using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())
+                    while (batcher.MakeNextBatch(writer, NetworkTime.time))
                     {
-                        while (batcher.MakeNextBatch(writer, NetworkTime.time))
-                        {
-                            // send
-                            Transport.activeTransport.ServerSend(connectionId, writer.ToArraySegment(), kvp.Key);
-                            //UnityEngine.Debug.Log($"sending batch of {writer.Position} bytes for channel={kvp.Key} connId={connectionId}");
+                        // send
+                        Transport.activeTransport.ServerSend(connectionId, writer.ToArraySegment(), kvp.Key);
+                        //UnityEngine.Debug.Log($"sending batch of {writer.Position} bytes for channel={kvp.Key} connId={connectionId}");
 
-                            // reset writer for each new batch
-                            writer.Position = 0;
-                        }
+                        // reset writer for each new batch
+                        writer.Position = 0;
                     }
                 }
             }
