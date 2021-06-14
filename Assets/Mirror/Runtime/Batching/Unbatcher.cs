@@ -68,7 +68,8 @@ namespace Mirror
         }
 
         // get next message, unpacked from batch (if any)
-        public bool GetNextMessage(out NetworkReader message)
+        // timestamp is the REMOTE time when the batch was created remotely.
+        public bool GetNextMessage(out NetworkReader message, out double timestamp)
         {
             // getting messages would be easy via
             //   <<size, message, size, message, ...>>
@@ -91,7 +92,10 @@ namespace Mirror
 
             // was our reader pointed to anything yet?
             if (reader.Length == 0)
+            {
+                timestamp = 0;
                 return false;
+            }
 
             // no more data to read?
             if (reader.Remaining == 0)
@@ -109,8 +113,16 @@ namespace Mirror
                     StartReadingBatch(next);
                 }
                 // otherwise there's nothing more to read
-                else return false;
+                else
+                {
+                    timestamp = 0;
+                    return false;
+                }
             }
+
+            // use the current batch's remote timestamp
+            // AFTER potentially moving to the next batch ABOVE!
+            timestamp = remoteTimestamp;
 
             // if we got here, then we have more data to read.
             message = reader;

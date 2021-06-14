@@ -315,7 +315,7 @@ namespace Mirror
                 //       the next time.
                 //       => consider moving processing to NetworkEarlyUpdate.
                 while (!isLoadingScene &&
-                       unbatcher.GetNextMessage(out NetworkReader reader))
+                       unbatcher.GetNextMessage(out NetworkReader reader, out double remoteTimestamp))
                 {
                     // enough to read at least header size?
                     if (reader.Remaining >= MessagePacking.HeaderSize)
