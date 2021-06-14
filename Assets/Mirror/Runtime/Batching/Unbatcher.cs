@@ -20,9 +20,10 @@ namespace Mirror
         // then pointed to the first batch.
         NetworkReader reader = new NetworkReader(new byte[0]);
 
-        // tick timestamp of the batch that the reader is currently pointed at.
-        double tickTimeStamp;
-        const int TickTimeStampSize = 8;
+        // timestamp that was written into the batch remotely.
+        // for the batch that our reader is currently pointed at.
+        double remoteTimestamp;
+        const int TimeStampSize = 8;
 
         // helper function to start reading a batch.
         void StartReadingBatch(PooledNetworkWriter batch)
@@ -30,9 +31,9 @@ namespace Mirror
             // point reader to it
             reader.SetBuffer(batch.ToArraySegment());
 
-            // read tick timestamp (double)
+            // read remote timestamp (double)
             // -> AddBatch quarantees that we have at least 8 bytes to read
-            tickTimeStamp = reader.ReadDouble();
+            remoteTimestamp = reader.ReadDouble();
         }
 
         // add a new batch.
@@ -46,7 +47,7 @@ namespace Mirror
             //       don't need to check against that.
 
             // make sure we have at least 8 bytes to read for tick timestamp
-            if (batch.Count < TickTimeStampSize)
+            if (batch.Count < TimeStampSize)
                 return false;
 
             // put into a (pooled) writer
