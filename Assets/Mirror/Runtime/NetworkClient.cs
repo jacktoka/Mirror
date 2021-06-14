@@ -297,7 +297,12 @@ namespace Mirror
                 // feed it to the Unbatcher.
                 // NOTE: we don't need to associate a channelId because we
                 //       always process all messages in the batch.
-                unbatcher.AddBatch(data);
+                if (!unbatcher.AddBatch(data))
+                {
+                    Debug.LogWarning($"NetworkClient: failed to add batch, disconnecting.");
+                    connection.Disconnect();
+                    return;
+                }
 
                 // process all messages in the batch.
                 // only while NOT loading a scene.

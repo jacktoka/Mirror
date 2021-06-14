@@ -438,7 +438,12 @@ namespace Mirror
                 // feed it to the Unbatcher.
                 // NOTE: we don't need to associate a channelId because we
                 //       always process all messages in the batch.
-                connection.unbatcher.AddBatch(data);
+                if (!connection.unbatcher.AddBatch(data))
+                {
+                    Debug.LogWarning($"NetworkServer: received Message was too short (messages should start with message id)");
+                    connection.Disconnect();
+                    return;
+                }
 
                 // process all messages in the batch.
                 // only while NOT loading a scene.

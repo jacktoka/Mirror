@@ -20,20 +20,34 @@ namespace Mirror
         // then pointed to the first batch.
         NetworkReader reader = new NetworkReader(new byte[0]);
 
+        // tick timestamp of the batch that the reader is currently pointed at.
+        double tickTimeStamp;
+        const int TickTimeStampSize = 8;
+
         // helper function to start reading a batch.
         void StartReadingBatch(PooledNetworkWriter batch)
         {
             // point reader to it
             reader.SetBuffer(batch.ToArraySegment());
+
+            // read tick timestamp (double)
+            // -> AddBatch quarantees that we have at least 8 bytes to read
+            tickTimeStamp = reader.ReadDouble();
         }
 
-        // add a new batch
-        public void AddBatch(ArraySegment<byte> batch)
+        // add a new batch.
+        // returns true if valid.
+        // returns false if not, in which case the connection should be disconnected.
+        public bool AddBatch(ArraySegment<byte> batch)
         {
             // IMPORTANT: ArraySegment is only valid until returning. we copy it!
-
+            //
             // NOTE: it's not possible to create empty ArraySegments, so we
             //       don't need to check against that.
+
+            // make sure we have at least 8 bytes to read for tick timestamp
+            if (batch.Count < TickTimeStampSize)
+                return false;
 
             // put into a (pooled) writer
             // -> WriteBytes instead of WriteSegment because the latter
@@ -49,6 +63,7 @@ namespace Mirror
             // add batch
             batches.Enqueue(writer);
             //Debug.Log($"Adding Batch {BitConverter.ToString(batch.Array, batch.Offset, batch.Count)} => batches={batches.Count} reader={reader}");
+            return true;
         }
 
         // get next message, unpacked from batch (if any)
