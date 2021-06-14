@@ -49,7 +49,7 @@ namespace Mirror
 
         // batch as many messages as possible into writer
         // returns true if any batch was made.
-        public bool MakeNextBatch(NetworkWriter writer, double timestamp)
+        public bool MakeNextBatch(NetworkWriter writer, double timeStamp)
         {
             // if we have no messages then there's nothing to do
             if (messages.Count == 0)
@@ -61,7 +61,7 @@ namespace Mirror
 
             // write timestamp first
             // -> double precision for accuracy over long periods of time
-            writer.WriteDouble(timestamp);
+            writer.WriteDouble(timeStamp);
 
             // for each queued message
             while (messages.Count > 0)

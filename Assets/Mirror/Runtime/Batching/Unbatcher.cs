@@ -22,7 +22,7 @@ namespace Mirror
 
         // timestamp that was written into the batch remotely.
         // for the batch that our reader is currently pointed at.
-        double remoteTimestamp;
+        double readerRemoteTimeStamp;
         const int TimeStampSize = 8;
 
         // helper function to start reading a batch.
@@ -33,7 +33,7 @@ namespace Mirror
 
             // read remote timestamp (double)
             // -> AddBatch quarantees that we have at least 8 bytes to read
-            remoteTimestamp = reader.ReadDouble();
+            readerRemoteTimeStamp = reader.ReadDouble();
         }
 
         // add a new batch.
@@ -69,7 +69,7 @@ namespace Mirror
 
         // get next message, unpacked from batch (if any)
         // timestamp is the REMOTE time when the batch was created remotely.
-        public bool GetNextMessage(out NetworkReader message, out double timestamp)
+        public bool GetNextMessage(out NetworkReader message, out double remoteTimeStamp)
         {
             // getting messages would be easy via
             //   <<size, message, size, message, ...>>
@@ -93,7 +93,7 @@ namespace Mirror
             // was our reader pointed to anything yet?
             if (reader.Length == 0)
             {
-                timestamp = 0;
+                remoteTimeStamp = 0;
                 return false;
             }
 
@@ -115,14 +115,14 @@ namespace Mirror
                 // otherwise there's nothing more to read
                 else
                 {
-                    timestamp = 0;
+                    remoteTimeStamp = 0;
                     return false;
                 }
             }
 
             // use the current batch's remote timestamp
             // AFTER potentially moving to the next batch ABOVE!
-            timestamp = remoteTimestamp;
+            remoteTimeStamp = readerRemoteTimeStamp;
 
             // if we got here, then we have more data to read.
             message = reader;
