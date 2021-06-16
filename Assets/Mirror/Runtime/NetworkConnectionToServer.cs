@@ -38,7 +38,11 @@ namespace Mirror
                 Batcher batcher = kvp.Value;
                 using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())
                 {
-                    while (batcher.MakeNextBatch(writer, NetworkTime.time))
+                    // make a batch with our local time (double precision)
+                    // IMPORTANT: NOT NetworkTime.time, which is affected by
+                    //            latency. we want the true local time so the
+                    //            server can do exact interpolation if needed.
+                    while (batcher.MakeNextBatch(writer, NetworkTime.localTime))
                     {
                         // send
                         Transport.activeTransport.ClientSend(writer.ToArraySegment(), kvp.Key);
