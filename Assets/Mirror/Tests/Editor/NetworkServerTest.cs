@@ -349,7 +349,7 @@ namespace Mirror.Tests
         // make sure NetworkConnection.remoteTimeStamp is always the time on the
         // remote end when the message was sent
         [Test]
-        public void SendClientToServerMessage_SetsRemoteTimeStamp()
+        public void Send_ClientToServerMessage_SetsRemoteTimeStamp()
         {
             // register a message handler
             int called = 0;
@@ -379,6 +379,39 @@ namespace Mirror.Tests
             //  finish the batch. but the difference should not be > 'waitTime')
             Assert.That(called, Is.EqualTo(1));
             Assert.That(connectionToClient.remoteTimeStamp, Is.EqualTo(sendTime).Within(waitTime / 10));
+        }
+
+        [Test]
+        public void Send_ServerToClientMessage_SetsRemoteTimeStamp()
+        {
+            // register a message handler
+            int called = 0;
+            NetworkClient.RegisterHandler<TestMessage1>(msg => ++called, false);
+
+            // listen & connect a client
+            NetworkServer.Listen(1);
+            ConnectClientBlocking(out NetworkConnectionToClient connectionToClient);
+
+            // send message
+            connectionToClient.Send(new TestMessage1());
+
+            // remember current time & update NetworkClient IMMEDIATELY so the
+            // batch is finished with timestamp.
+            double sendTime = NetworkTime.localTime;
+            NetworkServer.NetworkLateUpdate();
+
+            // let some time pass before processing
+            const int waitTime = 100;
+            Thread.Sleep(waitTime);
+            ProcessMessages();
+
+            // is the remote timestamp set to when we sent it?
+            // remember the time when we sent the message
+            // (within 1/10th of the time we waited. we need some tolerance
+            //  because we don't capture NetworkTime.localTime exactly when we
+            //  finish the batch. but the difference should not be > 'waitTime')
+            Assert.That(called, Is.EqualTo(1));
+            Assert.That(NetworkClient.connection.remoteTimeStamp, Is.EqualTo(sendTime).Within(waitTime / 10));
         }
 
         [Test]
