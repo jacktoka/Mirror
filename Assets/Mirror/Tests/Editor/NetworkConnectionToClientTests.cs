@@ -58,6 +58,9 @@ namespace Mirror.Tests
         [Test]
         public void SendBatchingResetsPreviousWriter()
         {
+            // batching adds 8 byte timestamp header
+            const int BatchHeader = 8;
+
             // create connection
             NetworkConnectionToClient connection = new NetworkConnectionToClient(42);
 
@@ -67,9 +70,9 @@ namespace Mirror.Tests
             connection.Update();
             UpdateTransport();
             Assert.That(clientReceived.Count, Is.EqualTo(1));
-            Assert.That(clientReceived[0].Length, Is.EqualTo(2));
-            Assert.That(clientReceived[0][0], Is.EqualTo(0x01));
-            Assert.That(clientReceived[0][1], Is.EqualTo(0x02));
+            Assert.That(clientReceived[0].Length, Is.EqualTo(BatchHeader + 2));
+            Assert.That(clientReceived[0][BatchHeader + 0], Is.EqualTo(0x01));
+            Assert.That(clientReceived[0][BatchHeader + 1], Is.EqualTo(0x02));
 
             // clear previous
             clientReceived.Clear();
@@ -80,8 +83,8 @@ namespace Mirror.Tests
             connection.Update();
             UpdateTransport();
             Assert.That(clientReceived.Count, Is.EqualTo(1));
-            Assert.That(clientReceived[0].Length, Is.EqualTo(1));
-            Assert.That(clientReceived[0][0], Is.EqualTo(0xFF));
+            Assert.That(clientReceived[0].Length, Is.EqualTo(BatchHeader + 1));
+            Assert.That(clientReceived[0][BatchHeader + 0], Is.EqualTo(0xFF));
         }
     }
 }
