@@ -461,6 +461,10 @@ namespace Mirror
                     // enough to read at least header size?
                     if (reader.Remaining >= MessagePacking.HeaderSize)
                     {
+                        // make remoteTimeStamp available to the user
+                        connection.remoteTimeStamp = remoteTimestamp;
+
+                        // handle message
                         if (!UnpackAndInvoke(connection, reader, channelId))
                             break;
                     }

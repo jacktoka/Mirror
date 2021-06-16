@@ -57,6 +57,15 @@ namespace Mirror
         // Dictionary<channelId, batch> because we have multiple channels.
         protected Dictionary<int, Batcher> batches = new Dictionary<int, Batcher>();
 
+        /// <summary>last batch's remote timestamp. not interpolated. useful for NetworkTransform etc.</summary>
+        // for any given NetworkMessage/Rpc/Cmd/OnSerialize, this was the time
+        // on the REMOTE END when it was sent.
+        //
+        // NOTE: this is NOT in NetworkTime, it needs to be per-connection
+        //       because the server receives different batch timestamps from
+        //       different connections.
+        public double remoteTimeStamp { get; internal set; }
+
         internal NetworkConnection()
         {
             // set lastTime to current time when creating connection to make
